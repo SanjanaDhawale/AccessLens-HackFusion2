@@ -251,14 +251,10 @@ class BOLATestConfig(BaseModel):
         cross_case = cross_cases[0]
 
         if owner_case.expected_access != "ALLOW":
-            raise ValueError(
-                "OWNER_ACCESS must expect ALLOW"
-            )
+            raise ValueError("OWNER_ACCESS must expect ALLOW")
 
         if cross_case.expected_access != "DENY":
-            raise ValueError(
-                "CROSS_ACCOUNT_ACCESS must expect DENY"
-            )
+            raise ValueError("CROSS_ACCOUNT_ACCESS must expect DENY")
 
         actual_owner = self.object_reference.owner_identity_id
 
@@ -270,6 +266,131 @@ class BOLATestConfig(BaseModel):
         if cross_case.identity_id == actual_owner:
             raise ValueError(
                 "Cross-account identity must not own the object"
+            )
+
+        return self
+
+
+# ============================================================
+# API3:2023 - BOPLA CONFIGURATION
+# ============================================================
+
+class BOPLAPropertyTest(BaseModel):
+    """
+    One explicitly authorized API3 sensitive-property exposure test.
+
+    Only GET endpoints are supported by this safe test configuration.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    test_id: str = Field(min_length=1, max_length=64)
+    endpoint_path: str = Field(min_length=2, max_length=2048)
+    credential_ref: str = Field(min_length=1, max_length=100)
+
+    # Examples:
+    # salary
+    # ssn
+    # profile.private_notes
+    forbidden_properties: list[str] = Field(
+        min_length=1,
+        max_length=50,
+    )
+
+    @field_validator("endpoint_path")
+    @classmethod
+    def validate_endpoint_path(cls, value: str) -> str:
+        parsed = urlsplit(value)
+        decoded_path = unquote(parsed.path)
+
+        if (
+            not value.startswith("/")
+            or value.startswith("//")
+            or parsed.scheme
+            or parsed.netloc
+            or parsed.query
+            or parsed.fragment
+            or "\\" in decoded_path
+            or any(
+                ord(char) < 32 or ord(char) == 127
+                for char in decoded_path
+            )
+            or any(
+                part in {".", ".."}
+                for part in decoded_path.split("/")
+            )
+        ):
+            raise ValueError("Invalid BOPLA endpoint path")
+
+        return value
+
+    @field_validator("credential_ref")
+    @classmethod
+    def validate_credential_ref(cls, value: str) -> str:
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]{0,99}", value):
+            raise ValueError("Invalid credential reference")
+
+        return value
+
+    @field_validator("forbidden_properties")
+    @classmethod
+    def validate_forbidden_properties(
+        cls,
+        values: list[str],
+    ) -> list[str]:
+
+        normalized = []
+
+        for property_path in values:
+            if (
+                not isinstance(property_path, str)
+                or not property_path.strip()
+                or len(property_path) > 256
+                or any(
+                    not re.fullmatch(r"[A-Za-z0-9_-]+", part)
+                    for part in property_path.split(".")
+                )
+            ):
+                raise ValueError(
+                    "Invalid sensitive property path"
+                )
+
+            normalized.append(property_path)
+
+        if len(normalized) != len(set(normalized)):
+            raise ValueError(
+                "Sensitive property paths must not contain duplicates"
+            )
+
+        return normalized
+
+
+class BOPLATestConfig(BaseModel):
+    """Explicit configuration for API3 property exposure checks."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    tests: list[BOPLAPropertyTest] = Field(
+        min_length=1,
+        max_length=20,
+    )
+
+    @model_validator(mode="after")
+    def validate_tests(self) -> "BOPLATestConfig":
+
+        test_ids = [test.test_id for test in self.tests]
+
+        if len(test_ids) != len(set(test_ids)):
+            raise ValueError("BOPLA test IDs must be unique")
+
+        test_targets = [
+            (test.endpoint_path, test.credential_ref)
+            for test in self.tests
+        ]
+
+        if len(test_targets) != len(set(test_targets)):
+            raise ValueError(
+                "Duplicate BOPLA endpoint and credential combinations"
             )
 
         return self
@@ -290,11 +411,18 @@ class ScanInput(BaseModel):
     scan_profile: str
     authorization_context: AuthorizationContext
 
-    # Optional extension: existing scan requests remain compatible.
+    # API2: Explicitly identified authentication-protected endpoints.
+    authentication_required_endpoints: list[str] = Field(
+        default_factory=list
+    )
+
+    # Optional API1 configuration.
     bola_test: BOLATestConfig | None = None
 
-    # Private/loopback targets are denied unless explicitly authorized.
-    # For an isolated lab, list every permitted resolved IP address.
+    # Optional API3 configuration.
+    bopla_test: BOPLATestConfig | None = None
+
+    # Private/loopback target authorization.
     allow_private_targets: bool = False
     authorized_ips: list[str] = Field(default_factory=list)
 
@@ -304,13 +432,22 @@ class ScanInput(BaseModel):
         import ipaddress
 
         normalized = []
+
         for value in values:
             try:
-                normalized.append(str(ipaddress.ip_address(value.strip())))
+                normalized.append(
+                    str(ipaddress.ip_address(value.strip()))
+                )
             except ValueError as exc:
-                raise ValueError("authorized_ips must contain valid IP addresses") from exc
+                raise ValueError(
+                    "authorized_ips must contain valid IP addresses"
+                ) from exc
+
         if len(normalized) != len(set(normalized)):
-            raise ValueError("authorized_ips must not contain duplicates")
+            raise ValueError(
+                "authorized_ips must not contain duplicates"
+            )
+
         return normalized
 
     @field_validator("scan_id")
@@ -375,6 +512,76 @@ class ScanInput(BaseModel):
                 )
 
         return values
+
+    @field_validator("authentication_required_endpoints")
+    @classmethod
+    def validate_authentication_required_endpoints(
+        cls,
+        values: list[str],
+    ) -> list[str]:
+
+        normalized = []
+
+        for path in values:
+            if not isinstance(path, str):
+                raise ValueError(
+                    "Authentication endpoint paths must be strings"
+                )
+
+            parsed = urlsplit(path)
+            decoded_path = unquote(parsed.path)
+
+            if (
+                not path.startswith("/")
+                or path.startswith("//")
+                or parsed.scheme
+                or parsed.netloc
+                or parsed.query
+                or parsed.fragment
+                or "\\" in decoded_path
+                or any(
+                    ord(char) < 32 or ord(char) == 127
+                    for char in decoded_path
+                )
+                or any(
+                    part in {".", ".."}
+                    for part in decoded_path.split("/")
+                )
+            ):
+                raise ValueError(
+                    "authentication_required_endpoints must contain safe absolute API paths"
+                )
+
+            normalized.append(path)
+
+        if len(normalized) != len(set(normalized)):
+            raise ValueError(
+                "authentication_required_endpoints must not contain duplicates"
+            )
+
+        return normalized
+
+    @model_validator(mode="after")
+    def validate_bopla_configuration(self) -> "ScanInput":
+
+        if self.bopla_test is None:
+            return self
+
+        for test in self.bopla_test.tests:
+            matching_endpoints = [
+                endpoint
+                for endpoint in self.endpoints
+                if endpoint.path == test.endpoint_path
+                and endpoint.method == "GET"
+            ]
+
+            if not matching_endpoints:
+                raise ValueError(
+                    "BOPLA endpoint must match a configured GET endpoint: "
+                    f"{test.endpoint_path}"
+                )
+
+        return self
 
     @field_validator("scan_profile")
     @classmethod
