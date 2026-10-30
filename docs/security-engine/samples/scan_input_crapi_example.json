@@ -1,0 +1,37 @@
+{
+  "scan_id": "ACCESSLENS-CRAPI-EXAMPLE-001",
+  "target_url": "http://localhost:8888",
+  "authorized_hosts": ["localhost"],
+  "allowed_paths": ["/identity/api/v2/vehicle"],
+  "endpoints": [
+    {
+      "path": "/identity/api/v2/vehicle/vehicles",
+      "method": "GET",
+      "operation_id": "listVehicles",
+      "source": "USER_PROVIDED"
+    }
+  ],
+  "scan_profile": "OWASP_API_TOP_10_SAFE",
+  "authorization_context": {
+    "authorization_confirmed": true,
+    "credentials_available": true
+  },
+  "bola_test": {
+    "identities": [
+      {"identity_id": "user_a", "credential_ref": "CRAPI_USER_A"},
+      {"identity_id": "user_b", "credential_ref": "CRAPI_USER_B"}
+    ],
+    "object_reference": {
+      "object_id": "4f0c4904-0497-4b69-a269-2fae13801dac",
+      "object_type": "vehicle",
+      "owner_identity_id": "user_a",
+      "read_path": "/identity/api/v2/vehicle/4f0c4904-0497-4b69-a269-2fae13801dac/location"
+    },
+    "test_cases": [
+      {"case_id": "OWNER-001", "identity_id": "user_a", "access_type": "OWNER_ACCESS", "expected_access": "ALLOW"},
+      {"case_id": "CROSS-001", "identity_id": "user_b", "access_type": "CROSS_ACCOUNT_ACCESS", "expected_access": "DENY"}
+    ]
+  },
+  "allow_private_targets": true,
+  "authorized_ips": ["127.0.0.1", "::1"]
+}

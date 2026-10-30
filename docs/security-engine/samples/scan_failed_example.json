@@ -1,0 +1,77 @@
+{
+  "scan_id": "INVALID-INPUT-EXAMPLE",
+  "status": "FAILED",
+  "coverage": [
+    {
+      "owasp_id": "API1:2023",
+      "category": "Broken Object Level Authorization",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API2:2023",
+      "category": "Broken Authentication",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API3:2023",
+      "category": "Broken Object Property Level Authorization",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API4:2023",
+      "category": "Unrestricted Resource Consumption",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API5:2023",
+      "category": "Broken Function Level Authorization",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API6:2023",
+      "category": "Unrestricted Access to Sensitive Business Flows",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API7:2023",
+      "category": "Server Side Request Forgery",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API8:2023",
+      "category": "Security Misconfiguration",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API9:2023",
+      "category": "Improper Inventory Management",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    },
+    {
+      "owasp_id": "API10:2023",
+      "category": "Unsafe Consumption of APIs",
+      "status": "INCONCLUSIVE",
+      "reason": "Scan failed before this category could be tested."
+    }
+  ],
+  "findings": [],
+  "evidence": [],
+  "summary": {
+    "tested": 10,
+    "passed": 0,
+    "failed": 0,
+    "inconclusive": 10,
+    "not_applicable": 0
+  },
+  "error": "Scan could not be completed. Verify the input, authorization, scope, and target availability.",
+  "error_code": "SCAN_FAILED"
+}

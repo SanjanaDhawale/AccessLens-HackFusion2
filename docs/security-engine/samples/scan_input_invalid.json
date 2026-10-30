@@ -1,0 +1,13 @@
+{
+  "scan_id": " ",
+  "target_url": "https://api.example.test",
+  "authorized_hosts": ["*"],
+  "allowed_paths": ["/v1/vehicles"],
+  "endpoints": [],
+  "scan_profile": "FULL_UNSAFE_SCAN",
+  "authorization_context": {
+    "authorization_confirmed": false,
+    "credentials_available": false
+  },
+  "unexpected_field": "rejected because extra fields are forbidden"
+}

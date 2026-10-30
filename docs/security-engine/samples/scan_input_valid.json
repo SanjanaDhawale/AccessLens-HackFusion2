@@ -1,0 +1,26 @@
+{
+  "scan_id": "ACCESSLENS-EXAMPLE-001",
+  "target_url": "https://api.example.test",
+  "authorized_hosts": [
+    "api.example.test"
+  ],
+  "allowed_paths": [
+    "/v1/vehicles"
+  ],
+  "endpoints": [
+    {
+      "path": "/v1/vehicles",
+      "method": "GET",
+      "operation_id": "listVehicles",
+      "source": "USER_PROVIDED"
+    }
+  ],
+  "scan_profile": "OWASP_API_TOP_10_SAFE",
+  "authorization_context": {
+    "authorization_confirmed": true,
+    "credentials_available": false
+  },
+  "bola_test": null,
+  "allow_private_targets": false,
+  "authorized_ips": []
+}

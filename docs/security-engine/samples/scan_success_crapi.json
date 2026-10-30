@@ -1,0 +1,170 @@
+{
+  "scan_id": "ACCESSLENS-FINAL-VERIFY-001",
+  "status": "COMPLETED",
+  "coverage": [
+    {
+      "owasp_id": "API1:2023",
+      "category": "Broken Object Level Authorization",
+      "status": "FAIL",
+      "reason": "Confirmed unauthorized cross-account access to the owner's protected object."
+    },
+    {
+      "owasp_id": "API2:2023",
+      "category": "Broken Authentication",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API3:2023",
+      "category": "Broken Object Property Level Authorization",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API4:2023",
+      "category": "Unrestricted Resource Consumption",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API5:2023",
+      "category": "Broken Function Level Authorization",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API6:2023",
+      "category": "Unrestricted Access to Sensitive Business Flows",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API7:2023",
+      "category": "Server Side Request Forgery",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API8:2023",
+      "category": "Security Misconfiguration",
+      "status": "FAIL",
+      "reason": "Checked 1 authorized endpoint(s) for permissive wildcard CORS configuration."
+    },
+    {
+      "owasp_id": "API9:2023",
+      "category": "Improper Inventory Management",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API10:2023",
+      "category": "Unsafe Consumption of APIs",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    }
+  ],
+  "findings": [
+    {
+      "id": "API1-EEBA2E475002",
+      "owasp_id": "API1:2023",
+      "title": "Broken Object Level Authorization",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "confidence": "CONFIRMED",
+      "endpoint": "/identity/api/v2/vehicle/4f0c4904-0497-4b69-a269-2fae13801dac/location",
+      "method": "GET",
+      "evidence_id": "EVD-6509CBD453C4",
+      "rationale": "The owner successfully accessed the object. A different authenticated identity also accessed the same object and received matching protected object data.",
+      "remediation": "Enforce object-level authorization on every request. Verify that the authenticated user owns or is explicitly authorized to access the requested object."
+    },
+    {
+      "id": "API8-CORS-B5669FCAEB",
+      "owasp_id": "API8:2023",
+      "title": "Permissive wildcard CORS configuration",
+      "severity": "LOW",
+      "status": "FAIL",
+      "confidence": "HIGH",
+      "endpoint": "/identity/api/v2/vehicle/vehicles",
+      "method": "GET",
+      "evidence_id": "EVD-A026D439370F",
+      "rationale": "The server allows cross-origin requests from any origin. This is a permissive configuration. Exploitability has not been established.",
+      "remediation": "Configure an explicit allowlist of trusted origins. Permit only required HTTP methods and request headers. Avoid wildcard origins for sensitive authenticated APIs."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "EVD-6509CBD453C4",
+      "finding_id": "API1-EEBA2E475002",
+      "check_id": "API1:2023",
+      "timestamp": "2026-10-30T17:38:57.385433Z",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8888/identity/api/v2/vehicle/4f0c4904-0497-4b69-a269-2fae13801dac/location",
+        "headers": {
+          "Authorization": "[REDACTED]"
+        }
+      },
+      "response": {
+        "status_code": 200,
+        "headers": {
+          "server": "openresty/1.27.1.2",
+          "date": "Fri, 30 Oct 2026 17:38:57 GMT",
+          "content-type": "application/json",
+          "transfer-encoding": "chunked",
+          "connection": "keep-alive",
+          "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+          "x-content-type-options": "nosniff",
+          "x-xss-protection": "0",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "pragma": "no-cache",
+          "expires": "0",
+          "strict-transport-security": "max-age=31536000 ; includeSubDomains",
+          "x-frame-options": "DENY"
+        },
+        "body_excerpt": "{\"carId\": \"4f0c4904-0497-4b69-a269-2fae13801dac\", \"vehicleLocation\": \"[REDACTED]\", \"fullName\": \"[REDACTED]\", \"email\": \"[REDACTED]\"}"
+      },
+      "notes": "Owner positive control succeeded. The second identity received the same protected object data. Sensitive response values were redacted."
+    },
+    {
+      "evidence_id": "EVD-A026D439370F",
+      "finding_id": "API8-CORS-B5669FCAEB",
+      "check_id": "API8-CORS-001",
+      "timestamp": "2026-10-30T17:38:59.444557Z",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8888/identity/api/v2/vehicle/vehicles",
+        "headers": {
+          "Origin": "https://accesslens.invalid"
+        }
+      },
+      "response": {
+        "status_code": 401,
+        "headers": {
+          "server": "openresty/1.27.1.2",
+          "date": "Fri, 30 Oct 2026 17:38:59 GMT",
+          "content-type": "application/json;charset=ISO-8859-1",
+          "content-length": "49",
+          "connection": "keep-alive",
+          "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+          "access-control-allow-origin": "*",
+          "x-content-type-options": "nosniff",
+          "x-xss-protection": "0",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "pragma": "no-cache",
+          "expires": "0",
+          "strict-transport-security": "max-age=31536000 ; includeSubDomains",
+          "x-frame-options": "DENY"
+        },
+        "body_excerpt": ""
+      },
+      "notes": "Wildcard CORS configuration observed for an explicitly supplied test origin. Authentication credentials and response body were not stored."
+    }
+  ],
+  "summary": {
+    "tested": 10,
+    "passed": 0,
+    "failed": 2,
+    "inconclusive": 8,
+    "not_applicable": 0
+  }
+}

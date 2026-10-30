@@ -1,0 +1,75 @@
+{
+  "scan_id": "INCONCLUSIVE-EXAMPLE-001",
+  "status": "COMPLETED",
+  "coverage": [
+    {
+      "owasp_id": "API1:2023",
+      "category": "Broken Object Level Authorization",
+      "status": "INCONCLUSIVE",
+      "reason": "BOLA test configuration was not supplied; cross-account authorization could not be evaluated."
+    },
+    {
+      "owasp_id": "API2:2023",
+      "category": "Broken Authentication",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API3:2023",
+      "category": "Broken Object Property Level Authorization",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API4:2023",
+      "category": "Unrestricted Resource Consumption",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API5:2023",
+      "category": "Broken Function Level Authorization",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API6:2023",
+      "category": "Unrestricted Access to Sensitive Business Flows",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API7:2023",
+      "category": "Server Side Request Forgery",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API8:2023",
+      "category": "Security Misconfiguration",
+      "status": "INCONCLUSIVE",
+      "reason": "No authorized endpoints were provided."
+    },
+    {
+      "owasp_id": "API9:2023",
+      "category": "Improper Inventory Management",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    },
+    {
+      "owasp_id": "API10:2023",
+      "category": "Unsafe Consumption of APIs",
+      "status": "INCONCLUSIVE",
+      "reason": "Detector is not implemented in this MVP; this category was not tested."
+    }
+  ],
+  "findings": [],
+  "evidence": [],
+  "summary": {
+    "tested": 10,
+    "passed": 0,
+    "failed": 0,
+    "inconclusive": 10,
+    "not_applicable": 0
+  }
+}
