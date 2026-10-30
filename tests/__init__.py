@@ -1,0 +1,1 @@
+"""AccessLens automated tests."""
