@@ -183,6 +183,7 @@ body{background:#05070c}
     object-fit: contain !important;
 }
 </style>
+<style>.exact-wordmark { display: none !important; }</style>
 </head><body>
 
 <div class="layout"><aside class="sidebar"><div class="side-top"><button class="new" id="new">＋ NEW ASSESSMENT</button><div class="side-label"><span>// SYSTEM_NODES</span><b>[DEMO]</b></div><nav class="nav"><a class="nav-item active" href="cyber-home-reference.html"><span class="ico">◆</span><strong>AI Analyst</strong><small>ACTIVE</small></a><a class="nav-item" href="dashboard-preview.html"><span class="ico">◷</span>Recent activity<span class="logs">DEMO</span></a><a class="nav-item" href="dashboard-preview.html"><span class="ico">▦</span>Admin dashboard<small class="restricted">Restricted</small></a></nav><div class="meter"><div class="meter-row"><span>API ENDPOINTS</span><b>05 Examples</b></div><div class="meter-track"><span></span></div><div class="meter-bottom"><span>OWASP Coverage</span><span>DEMO ONLY</span></div></div></div></aside>
@@ -195,6 +196,7 @@ body{background:#05070c}
 <script>
 'use strict';const $=id=>document.getElementById(id);document.querySelectorAll('[data-task]').forEach(btn=>btn.addEventListener('click',()=>{$('prompt').value=btn.dataset.task;$('prompt').focus()}));$('new').addEventListener('click',()=>{$('prompt').value='';$('console').classList.remove('open');$('base').value='';$('paths').value='';$('prompt').focus()});function assess(){const q=$('prompt').value.trim();if(!q){$('prompt').focus();return}$('console').classList.add('open');$('response').textContent='Request prepared: '+q+'. This is a local UI demonstration. Enter authorized scope to continue. No API scan or network test has started.';$('scope-status').textContent='';$('console').scrollIntoView({behavior:'smooth',block:'nearest'})}$('assess').addEventListener('click',assess);$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();assess()}});$('confirm').addEventListener('click',()=>{const base=$('base').value.trim(),paths=$('paths').value.trim();$('scope-status').textContent=base&&paths?'Scope recorded locally for '+base+' with permitted paths '+paths+'. No scan has started.':'Please enter both an API URL and permitted paths.'});$('attach').addEventListener('click',()=>{$('console').classList.add('open');$('response').textContent='OpenAPI file upload is not connected in this standalone frontend preview.'});$('sample').addEventListener('click',()=>{$('prompt').value='Analyse my OpenAPI specification (sample placeholder; no file uploaded)';$('prompt').focus()});
 </script></body></html>
+
 
 
 
