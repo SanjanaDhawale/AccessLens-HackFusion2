@@ -1,0 +1,20 @@
+"use strict";
+// Frontend-only preview: no network requests, scans, changes, or report generation.
+const $=id=>document.getElementById(id);
+let pendingTarget=null;
+const chat=$("chat"),messages=$("messages"),welcome=$("welcome");
+function add(role,text,actions=[]){welcome.hidden=true;const el=document.createElement("div");el.className="message "+role;el.textContent=text;if(actions.length){const bar=document.createElement("div");bar.className="buttons";actions.forEach(a=>{const b=document.createElement("button");b.type="button";b.textContent=a.label;b.addEventListener("click",a.run);bar.append(b)});el.append(bar)}messages.append(el);chat.scrollTop=chat.scrollHeight}
+function targetFrom(text){const match=text.match(/https?:\/\/[^\s<>"']+/i);if(!match)return null;try{const url=new URL(match[0].replace(/[.,;!?]+$/,""));return ["https:","http:"].includes(url.protocol)?url.href:null}catch{return null}}
+function askPermission(url){pendingTarget=url;$("target-display").textContent=url;$("consent").checked=false;$("approve").disabled=true;$("dialog").hidden=false;$("consent").focus()}
+function explain(input){const url=targetFrom(input);if(url){add("assistant","I can help assess "+url+" after you confirm you are authorized to test it.\n\nThis frontend is a demonstration: it cannot perform a real scan or report vulnerabilities.",[{label:"Review scan authorization",run:()=>askPermission(url)},{label:"Cancel",run:()=>add("assistant","No assessment has been started.")}]);return}
+if(/report|pdf/i.test(input)){add("assistant","I can prepare a security report after a real authorized scan is completed. Report generation and downloads are not connected yet.",[{label:"Request report (demo)",run:()=>add("assistant","Report request noted in this demo. No PDF has been generated. Backend integration and your confirmation are required.")}]);return}
+if(/fix|bug|error|remediat|remove/i.test(input)){add("assistant","Before changing an API, AccessLens would show you the affected endpoint, proposed fix, risks, and rollback plan. Nothing can be modified from this demo.",[{label:"Review proposed changes",run:()=>add("assistant","No verified findings or proposed patches are available yet. Once connected, you will be able to approve or reject each change.")},{label:"Reject changes",run:()=>add("assistant","Changes rejected. No API was modified.")}]);return}
+add("assistant","I can explain API vulnerabilities, help you plan an authorized assessment, or describe report and remediation workflows.\n\nFor example, paste an API URL and I will request scan authorization. I will not invent scan results.")}
+$("prompt-form").addEventListener("submit",e=>{e.preventDefault();const input=$("prompt").value.trim();if(!input)return;add("user",input);$("prompt").value="";explain(input)});
+$("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("prompt-form").requestSubmit()}});
+document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>{$("prompt").value=b.dataset.prompt;$("prompt-form").requestSubmit()}));
+$("new-chat").addEventListener("click",()=>{messages.replaceChildren();welcome.hidden=false;$("prompt").value="";$("dialog").hidden=true;$("prompt").focus()});
+$("consent").addEventListener("change",e=>$("approve").disabled=!e.target.checked);
+$("cancel").addEventListener("click",()=>{$("dialog").hidden=true;pendingTarget=null;add("assistant","Authorization cancelled. No scan was started.")});
+$("approve").addEventListener("click",()=>{if(!$("consent").checked||!pendingTarget)return;const target=pendingTarget;pendingTarget=null;$("dialog").hidden=true;add("assistant","Authorization acknowledged for "+target+".\n\nThis is a frontend-only preview. No scan was started, no traffic was sent to the API, and no findings have been generated. The next step is connecting verified backend scan endpoints.")});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("dialog").hidden){$("dialog").hidden=true;pendingTarget=null}});
