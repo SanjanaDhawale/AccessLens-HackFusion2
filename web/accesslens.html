@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#050b12">
+  <title>AccessLens — AI API Security Analyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/accesslens.css">
+  <script src="js/config.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/accesslens.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-row">
+        <img src="assets/accesslens-shield.png" alt="" class="brand-logo">
+        <span>ACCESS<span class="brand-accent">LENS</span></span>
+        <button class="mobile-close icon-btn" id="closeSidebar" aria-label="Close navigation">×</button>
+      </div>
+      <button class="new-chat" id="newChat"><span>＋</span> New assessment</button>
+      <div class="nav-caption">// SYSTEM_NODES</div>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="chat"><span class="nav-icon">◈</span> AI Analyst <span class="nav-tag">ACTIVE</span></button>
+        <button class="nav-item" data-view="history"><span class="nav-icon">◷</span> Recent activity</button>
+        <button class="nav-item" id="openAdmin"><span class="nav-icon">▦</span> Admin dashboard <span class="nav-tag restricted">RESTRICTED</span></button>
+      </nav>
+      <div class="sidebar-meter">
+        <div class="meter-heading"><span>API ENDPOINTS</span><b id="endpointCount">—</b></div>
+        <div class="meter-track"><span></span></div>
+        <div class="meter-foot"><span>OWASP Coverage</span><span>BACKEND DATA</span></div>
+      </div>
+      <div class="sidebar-bottom">
+        <span class="live-dot"></span> AUTHORIZED TESTING ONLY
+        <p>AccessLens only tests systems you own or are explicitly authorized to assess.</p>
+        <div class="sidebar-version">ACCESSLENS SECURITY STUDIO · 1.0</div>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div class="topbar-left"><button class="icon-btn menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button><span class="terminal-label">// AI_SECURITY_ANALYST</span><span class="connection-pill" id="connection"><i></i> CONNECTING</span></div>
+        <div class="topbar-right"><span class="top-date" id="clock"></span><span class="user-avatar">AL</span></div>
+      </header>
+
+      <section class="chat-screen" id="chatView">
+        <div class="chat-scroll" id="chatScroll">
+          <div class="welcome-block" id="welcome">
+            <div class="welcome-emblem"><img src="assets/accesslens-shield.png" alt="AccessLens shield"></div>
+            <div class="eyebrow">INTELLIGENT API SECURITY</div>
+            <h1>YOUR AI API SECURITY ANALYST</h1>
+            <p class="welcome-subtitle">Assess APIs. Discover vulnerabilities. Secure your applications.</p>
+            <div class="network-visual" aria-hidden="true">
+              <div class="network-grid"></div><span class="node n1"></span><span class="node n2"></span><span class="node n3"></span><span class="node n4"></span><span class="node n5"></span><span class="node n6"></span><span class="node n7"></span><span class="node n8"></span>
+              <svg viewBox="0 0 900 220" preserveAspectRatio="none"><g fill="none" stroke="#168dff" stroke-width="1.5" opacity=".72"><path d="M20 150 130 80 250 140 365 48 480 125 600 35 730 112 875 50M130 80 180 195 365 48 420 190 600 35 650 190 730 112 820 200M20 150 180 195 250 140 420 190 480 125 650 190 875 50"/></g></svg>
+            </div>
+            <div class="suggestion-grid">
+              <button class="suggestion-card" data-prompt="I want to analyze my API for security vulnerabilities."><span class="suggestion-symbol cyan">⌁</span><span><b>Analyze my API</b><small>Check for security vulnerabilities</small></span><span class="card-arrow">↗</span></button>
+              <button class="suggestion-card" data-prompt="Help me check authentication and authorization security."><span class="suggestion-symbol violet">♙</span><span><b>Check authentication</b><small>Review auth and authorization</small></span><span class="card-arrow">↗</span></button>
+              <button class="suggestion-card" data-prompt="Explain API security vulnerabilities in simple language."><span class="suggestion-symbol blue">▤</span><span><b>Explain findings</b><small>Get simple explanations</small></span><span class="card-arrow">↗</span></button>
+              <button class="suggestion-card" data-prompt="I need a security report for my completed assessment."><span class="suggestion-symbol magenta">⌗</span><span><b>Generate report</b><small>Create a detailed security report</small></span><span class="card-arrow">↗</span></button>
+            </div>
+          </div>
+          <div class="message-list" id="messages" aria-live="polite"></div>
+          <div class="scan-panel" id="scanPanel" hidden>
+            <div class="scan-panel-head"><span class="scan-pulse"></span><div><b id="scanTitle">Assessment in progress</b><small id="scanStage">Waiting for backend status…</small></div><strong id="scanPercent">—</strong></div>
+            <div class="progress-track"><span id="scanProgress"></span></div>
+            <div class="scan-meta"><span id="scanId"></span><span id="scanStatus">Awaiting backend</span></div>
+          </div>
+        </div>
+
+        <div class="composer-wrap">
+          <form class="composer" id="chatForm">
+            <textarea id="chatInput" rows="1" placeholder="Describe your API or ask anything about API security…" aria-label="Message AccessLens"></textarea>
+            <div class="composer-toolbar">
+              <div class="composer-tools">
+                <label class="tool-button" for="specFile">＋ <span>Upload OpenAPI</span></label>
+                <input id="specFile" type="file" accept=".json,.yaml,.yml,application/json,text/yaml" hidden>
+                <span id="selectedFile" class="selected-file"></span>
+                <button class="tool-button" type="button" id="addUrl">↗ <span>Add API URL</span></button>
+              </div>
+              <button class="send-button" type="submit" aria-label="Send message">↑</button>
+            </div>
+          </form>
+          <p class="composer-note"><span>◈</span> Only authorized testing is permitted. Never paste production secrets or API keys into chat.</p>
+        </div>
+      </section>
+
+      <section class="history-screen" id="historyView" hidden>
+        <div class="history-heading"><div class="eyebrow">WORKSPACE / SESSION</div><h2>Recent activity</h2><p>Your current conversation history is stored in this browser session only.</p></div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="scopeModal" hidden>
+    <section class="scope-modal" role="dialog" aria-modal="true" aria-labelledby="scopeTitle">
+      <div class="modal-kicker">AUTHORIZATION GATE / REQUIRED</div>
+      <h2 id="scopeTitle">Confirm your assessment scope</h2>
+      <p class="modal-intro">Before AccessLens starts a security assessment, confirm that you are authorized to test this API and define exactly which host and paths are in scope.</p>
+      <form id="scopeForm">
+        <label for="targetUrl">API base URL</label><input id="targetUrl" type="url" placeholder="https://api.example.com" required>
+        <label for="allowedPaths">Allowed paths <small>Comma-separated, absolute paths</small></label><input id="allowedPaths" type="text" value="/" placeholder="/, /v1/users, /v1/orders" required>
+        <div class="scope-host" id="scopeHost">HOST SCOPE WILL APPEAR HERE</div>
+        <label class="consent-row"><input type="checkbox" id="authorizationCheck" required><span>I own this API or have explicit permission to perform security testing on this host and the paths listed above.</span></label>
+        <div class="credential-warning"><b>Credential safety</b><span>Do not enter API keys, passwords, or production secrets here. The current backend contract does not provide a secure credential-vault workflow.</span></div>
+        <div class="modal-actions"><button type="button" class="secondary-button" id="cancelScope">Cancel</button><button type="submit" class="primary-button" id="confirmScope">Confirm authorized scope</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
