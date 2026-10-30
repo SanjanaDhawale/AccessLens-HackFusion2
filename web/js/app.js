@@ -1,7 +1,7 @@
-"use strict";
+﻿"use strict";
 
 // UI-only milestone. No scan is started without a documented backend contract.
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = window.AccessLensAPI.baseUrl();
 const $ = (id) => document.getElementById(id);
 const conversation = $("conversation");
 const chatInput = $("chat-input");
@@ -173,7 +173,7 @@ async function checkApi() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4000);
   try {
-    const response = await fetch(`${API_BASE}/api/health`, { signal: controller.signal });
+    const response = await fetch(`${API_BASE}/health`, { signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (data.status !== "ok") throw new Error("Backend not ready");
@@ -185,3 +185,4 @@ async function checkApi() {
   } finally { clearTimeout(timeout); }
 }
 checkApi();
+

@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08090C" />
   <title>AccessLens | Your AI API Security Analyst</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="js/app.js" defer></script>
+  <script src="js/config.js" defer></script><script src="js/api.js" defer></script><script src="js/app.js" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -50,3 +50,4 @@
   <div class="modal-backdrop" id="auth-modal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-title"><div class="modal-head"><div><div class="eyebrow">AUTHORIZATION REQUIRED</div><h2 id="auth-title">Confirm assessment scope</h2></div><button id="auth-close" class="icon-button" aria-label="Close">✕</button></div><p>Only test systems you own or are explicitly authorized to assess. No network scan will run from this form until the backend supports scope enforcement.</p><form id="auth-form"><label for="scope-url">API target URL</label><input type="url" id="scope-url" placeholder="https://api.example.com" required /><label for="scope-paths">Allowed paths (comma-separated)</label><input id="scope-paths" placeholder="/users, /vehicles" required /><label class="check-row"><input id="auth-check" type="checkbox" required /><span>I confirm I own this API or have explicit permission to test the target and specified paths.</span></label><div class="modal-actions"><button type="button" class="button-muted" id="auth-cancel">Cancel</button><button type="submit" class="button-primary">Confirm scope</button></div></form></div></div>
 </body>
 </html>
+

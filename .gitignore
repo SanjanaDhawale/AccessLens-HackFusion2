@@ -21,3 +21,15 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local frontend backups
+/web-backup/
+/web-backup-m2/
+/web/cyber-home-preview.html
+/web/cyber-home-reference-broken.html
+/web/cyber-home-reference.html.backup
+/web/cyber-home-reference.html.before-video-fix
+/web/cyber-home-reference.html.design-backup
+/web/cyber-home-reference.html.video-backup
+/web/findings-preview-backup.html
+/web/assets/project-video.mp4
