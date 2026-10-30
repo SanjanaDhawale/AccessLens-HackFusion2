@@ -1,4 +1,4 @@
-"""AccessLens control plane: scoped scan request intake (no active scanning yet)."""
+"""AccessLens local-only end-to-end security demo API."""
 from datetime import datetime, timezone
 from threading import Lock
 from uuid import uuid4
@@ -7,93 +7,95 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
-
 from engine.scope import ScopeViolation, validate_target_url
+from engine.demo_scanner import scan_demo
 
-app = FastAPI(title="AccessLens API", version="0.2.0")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500", "http://127.0.0.1:3001", "http://localhost:3001"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "Authorization"],
-)
-
-# Development-only storage. Restarting the server clears jobs.
+app = FastAPI(title="AccessLens API", version="1.0.0")
+app.add_middleware(CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5500","http://localhost:5500","http://127.0.0.1:3001","http://localhost:3001"],
+    allow_credentials=False, allow_methods=["GET","POST"], allow_headers=["Content-Type"])
 _jobs: dict[str, dict] = {}
 _lock = Lock()
-# Until authenticated scope ownership verification exists, ONLY loopback demo
-# targets can be submitted. Never broaden this based on user-provided input.
 DEMO_HOSTS = {"127.0.0.1", "localhost"}
-
 
 class ScanRequest(BaseModel):
     target_url: str = Field(min_length=10, max_length=2048)
     openapi_url: str | None = None
-    approved_scope: list[str] = Field(min_length=1, max_length=100)
+    approved_scope: list[str] = Field(min_length=1, max_length=20)
     mode: str = "vulnerable"
     authorized: bool = False
 
     @field_validator("approved_scope")
     @classmethod
-    def check_paths(cls, value: list[str]) -> list[str]:
-        if any(not path.startswith("/") or path.startswith("//") or "?" in path or "#" in path for path in value):
-            raise ValueError("Each approved scope entry must be an absolute API path beginning with /")
-        return value
+    def validate_paths(cls, paths):
+        if any(not p.startswith("/") or p.startswith("//") or "?" in p or "#" in p for p in paths):
+            raise ValueError("Approved paths must start with / and cannot contain query strings")
+        return paths
 
-
-def require_local_scope(url: str) -> None:
+def check_target(url):
     try:
         validate_target_url(url, DEMO_HOSTS)
         parsed = urlsplit(url)
-        if parsed.fragment or parsed.username or parsed.password:
-            raise ScopeViolation("Fragments and embedded credentials are not allowed")
+        if parsed.port != 8001 or parsed.username or parsed.password or parsed.fragment:
+            raise ScopeViolation("Only the local ConnectedCar demo at port 8001 is allowed")
     except (ScopeViolation, ValueError) as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
+        raise HTTPException(400, str(exc)) from exc
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "service": "accesslens-api"}
-
+    return {"status": "ok", "service": "accesslens-api", "demo_mode": True}
 
 @app.get("/api/v1/scans")
 def list_scans():
     with _lock:
         return {"items": list(_jobs.values())}
 
-
-@app.post("/api/v1/scans", status_code=202)
-def create_scan(request: ScanRequest):
-    if not request.authorized:
-        raise HTTPException(status_code=403, detail="Explicit scan authorization is required")
-    require_local_scope(request.target_url)
-    if request.openapi_url:
-        require_local_scope(request.openapi_url)
-        if urlsplit(request.openapi_url).hostname != urlsplit(request.target_url).hostname:
-            raise HTTPException(status_code=400, detail="OpenAPI host must match target host")
-    if request.mode not in {"vulnerable", "fixed"}:
-        raise HTTPException(status_code=400, detail="Unsupported demo mode")
-    # Intake only. No outbound requests, active scans, or findings.
-    job = {
-        "id": str(uuid4()),
-        "target_url": request.target_url,
-        "approved_scope": request.approved_scope,
-        "mode": request.mode,
-        "status": "awaiting_engine",
-        "message": "Request recorded. Scan execution is not implemented.",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "findings": [],
-    }
-    with _lock:
-        _jobs[job["id"]] = job
-    return job
-
-
 @app.get("/api/v1/scans/{scan_id}")
 def get_scan(scan_id: str):
     with _lock:
         job = _jobs.get(scan_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail="Scan request not found")
+    if not job:
+        raise HTTPException(404, "Scan not found")
     return job
+
+@app.post("/api/v1/scans", status_code=202)
+async def create_scan(request: ScanRequest):
+    if not request.authorized:
+        raise HTTPException(403, "Explicit authorization required")
+    check_target(request.target_url)
+    if request.openapi_url:
+        raise HTTPException(400, "OpenAPI URLs are not supported in this local demo")
+    if request.mode not in {"vulnerable", "fixed"}:
+        raise HTTPException(400, "Unsupported mode")
+    job = {"id": str(uuid4()), "target_url": request.target_url,
+           "approved_scope": request.approved_scope, "mode": request.mode,
+           "status": "running", "created_at": datetime.now(timezone.utc).isoformat(),
+           "findings": [], "message": "Running synthetic authorization check"}
+    with _lock:
+        _jobs[job["id"]] = job
+    try:
+        findings = await scan_demo(request.target_url, request.approved_scope)
+        job["findings"] = findings
+        job["status"] = "completed"
+        job["message"] = "Synthetic authorization check completed"
+    except (ValueError, ScopeViolation) as exc:
+        job["status"] = "rejected"
+        job["message"] = str(exc)
+    except Exception:
+        job["status"] = "failed"
+        job["message"] = "Synthetic target unavailable or returned unexpected data"
+    return job
+
+@app.get("/api/v1/scans/{scan_id}/findings")
+def get_findings(scan_id: str):
+    job = get_scan(scan_id)
+    return {"items": job["findings"], "scan_id": scan_id}
+
+@app.get("/api/v1/scans/{scan_id}/report")
+def report(scan_id: str):
+    job = get_scan(scan_id)
+    if job["status"] != "completed":
+        raise HTTPException(409, "Report requires completed check")
+    return {"scan_id": scan_id, "demo_only": True, "target_url": job["target_url"],
+            "status": job["status"], "findings": job["findings"],
+            "disclaimer": "Synthetic local ConnectedCar test only. Not a production VAPT report."}
