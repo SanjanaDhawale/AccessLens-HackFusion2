@@ -22,3 +22,45 @@ a:hover{color:var(--cyan)}
 .live-empty{color:var(--muted)}
 .preview-banner{background:var(--panel);color:var(--lime);border-color:var(--line)}
 ::selection{background:#00E5F255;color:var(--text)}
+
+/* SECURITY OPERATIONS DESIGN SYSTEM — restrained neon, readable, responsive */
+:root{--security-grid:#00e5f20b;--security-glow:#00e5f226}
+body{background-image:linear-gradient(var(--security-grid) 1px,transparent 1px),linear-gradient(90deg,var(--security-grid) 1px,transparent 1px)!important;background-size:44px 44px!important;background-attachment:fixed!important}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 80% 5%,#00e5f211,transparent 48%);opacity:.85}
+body>*,.shell,.layout{position:relative}
+.sidebar,.rail{background:linear-gradient(180deg,#132536 0%,#0c1825 100%)!important;border-right:1px solid #2c4859!important}
+.topbar,.cyber-top,.top{background:#0c1a28f2!important;border-bottom:1px solid #2c4859!important}
+.brand,.logo,.cyber-top{letter-spacing:.08em}
+.brand span,.logo .lime{color:var(--cyan)!important}
+.nav,.nav-link,.rail nav button{transition:background-color .18s,color .18s,box-shadow .18s}
+.nav:hover,.nav.selected,.nav-link:hover,.nav-link.selected,.rail nav button:hover,.rail nav button.active{background:#123845!important;color:var(--cyan)!important;box-shadow:inset 3px 0 var(--cyan)}
+.new,.new-chat{background:linear-gradient(105deg,#742de0,#b32dd8)!important;color:#fff!important;border:1px solid #bc5cff!important;box-shadow:0 6px 20px #8c2cdd24!important}
+.new:hover,.new-chat:hover{filter:brightness(1.15)}
+.workspace{background:radial-gradient(ellipse at 50% 0,#00e5f20b,transparent 58%)!important}
+.welcome h1,.heading h1{color:var(--text)!important;text-shadow:0 0 20px #00e5f22c!important}
+.welcome .eyebrow,.heading .kicker{color:var(--cyan)!important}
+.suggestions button,.message button,.button-secondary{background:#10313e!important;color:#d9faff!important;border:1px solid #208f9f!important;border-radius:7px!important;transition:background .2s,transform .2s}
+.suggestions button:hover,.message button:hover,.button-secondary:hover{background:#155064!important;transform:translateY(-1px)}
+.message.assistant,.message.user{box-shadow:0 8px 26px #00000026}
+.message.assistant{background:#152635!important;border:1px solid #2c4859!important;border-left:3px solid var(--cyan)!important}
+.message.user{background:#123743!important;border:1px solid #276879!important}
+.composer{background:#132635!important;border:1px solid #376478!important;box-shadow:0 0 0 1px #00e5f208,0 14px 45px #0005!important}
+.composer:focus-within{border-color:var(--cyan)!important;box-shadow:0 0 0 2px #00e5f224,0 14px 45px #0005!important}
+.composer-bottom button,#approve{background:var(--cyan)!important;color:#08151d!important;font-weight:850!important}
+.demo[data-state="online"],.online-chip{color:var(--success)!important;border-color:#31a77b!important;background:#0b4036!important}
+.dialog{background:#142635!important;border:1px solid var(--cyan)!important;box-shadow:0 24px 80px #000b,0 0 35px #00e5f21a!important}
+.panel,.live-panel{background:#152635ed!important;border:1px solid #315265!important;border-radius:10px!important;box-shadow:0 10px 32px #0003!important}
+.stat{box-shadow:inset 0 0 20px #00e5f209,0 7px 25px #0004!important}
+.stat:nth-child(1){color:var(--cyan)!important;border-color:var(--cyan)!important}
+.stat:nth-child(2){color:var(--amber)!important;border-color:var(--amber)!important}
+.stat:nth-child(3){color:var(--pink)!important;border-color:var(--purple)!important}
+.stat:nth-child(4){color:var(--success)!important;border-color:var(--success)!important}
+.button,.live-btn{background:var(--lime)!important;color:#0a111b!important;border-color:var(--lime)!important}
+.data-table th,.live-table th{background:#102d39!important;color:var(--cyan)!important}
+.data-table td,.live-table td{border-color:#2c4859!important}
+.notice{background:#142c39!important;color:#c4dfec!important;border-left:3px solid var(--purple)!important}
+.live-metrics strong{color:var(--cyan)!important}
+.live-warning{color:var(--amber)!important}
+a,button{touch-action:manipulation}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+@media(max-width:760px){.sidebar,.rail{border-right:0!important}.message{max-width:96%}.composer{box-shadow:none!important}}
