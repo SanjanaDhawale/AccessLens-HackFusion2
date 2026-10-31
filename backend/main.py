@@ -41,6 +41,21 @@ def check_target(url):
     except (ScopeViolation, ValueError) as exc:
         raise HTTPException(400, str(exc)) from exc
 
+@app.get("/api/v1/demo/endpoints")
+def demo_endpoints():
+    return {
+        "application": "ConnectedCar Synthetic Demo",
+        "base_url": "http://127.0.0.1:8001",
+        "synthetic_only": True,
+        "owasp_2023_tested": ["API1:2023 Broken Object Level Authorization"],
+        "endpoints": [
+            {"method": "GET", "path": "/health", "tested": False},
+            {"method": "GET", "path": "/vehicles/{vin}", "tested": True, "roles": ["owner", "admin"], "check": "BOLA owner vs non-owner"},
+            {"method": "POST", "path": "/mode", "tested": False},
+            {"method": "POST", "path": "/reset", "tested": False}
+        ]
+    }
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "accesslens-api", "demo_mode": True}
@@ -97,5 +112,10 @@ def report(scan_id: str):
     if job["status"] != "completed":
         raise HTTPException(409, "Report requires completed check")
     return {"scan_id": scan_id, "demo_only": True, "target_url": job["target_url"],
+            "application": "ConnectedCar Synthetic Demo",
+            "methodology": "Owner vs non-owner HTTP GET comparison",
+            "owasp_2023_tested": ["API1:2023 Broken Object Level Authorization"],
+            "scope": job["approved_scope"], "created_at": job["created_at"],
+            "recommendations": ["Enforce server-side object ownership checks on every request.", "Return 403 for cross-owner requests.", "Retest with the fixed synthetic target."],
             "status": job["status"], "findings": job["findings"],
             "disclaimer": "Synthetic local ConnectedCar test only. Not a production VAPT report."}
