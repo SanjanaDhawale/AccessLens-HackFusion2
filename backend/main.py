@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from engine.scope import ScopeViolation, validate_target_url
-from engine.demo_scanner import scan_demo
+from engine.demo_scanner import scan_demo, scan_lab
 
 app = FastAPI(title="AccessLens API", version="1.0.0")
 app.add_middleware(CORSMiddleware,
@@ -47,10 +47,13 @@ def demo_endpoints():
         "application": "ConnectedCar Synthetic Demo",
         "base_url": "http://127.0.0.1:8001",
         "synthetic_only": True,
-        "owasp_2023_tested": ["API1:2023 Broken Object Level Authorization"],
+        "owasp_2023_tested": ["API1:2023 Broken Object Level Authorization", "API3:2023 Broken Object Property Level Authorization (exposure check)", "API5:2023 Broken Function Level Authorization"],
         "endpoints": [
             {"method": "GET", "path": "/health", "tested": False},
             {"method": "GET", "path": "/vehicles/{vin}", "tested": True, "roles": ["owner", "admin"], "check": "BOLA owner vs non-owner"},
+            {"method": "GET", "path": "/profiles/{user_id}", "tested": True},
+            {"method": "GET", "path": "/admin/settings", "tested": True},
+            {"method": "GET", "path": "/search", "tested": True},
             {"method": "POST", "path": "/mode", "tested": False},
             {"method": "POST", "path": "/reset", "tested": False}
         ]
@@ -79,20 +82,20 @@ async def create_scan(request: ScanRequest):
         raise HTTPException(403, "Explicit authorization required")
     check_target(request.target_url)
     if request.openapi_url:
-        raise HTTPException(400, "OpenAPI URLs are not supported in this local demo")
+        raise HTTPException(400, "Remote OpenAPI URLs are not supported; use the local /openapi.json inventory")
     if request.mode not in {"vulnerable", "fixed"}:
         raise HTTPException(400, "Unsupported mode")
     job = {"id": str(uuid4()), "target_url": request.target_url,
            "approved_scope": request.approved_scope, "mode": request.mode,
            "status": "running", "created_at": datetime.now(timezone.utc).isoformat(),
-           "findings": [], "message": "Running synthetic authorization check"}
+           "findings": [], "message": "Running scoped synthetic OWASP lab checks"}
     with _lock:
         _jobs[job["id"]] = job
     try:
-        findings = await scan_demo(request.target_url, request.approved_scope)
+        findings = await scan_lab(request.target_url, request.approved_scope)
         job["findings"] = findings
         job["status"] = "completed"
-        job["message"] = "Synthetic authorization check completed"
+        job["message"] = "Scoped synthetic API checks completed"
     except (ValueError, ScopeViolation) as exc:
         job["status"] = "rejected"
         job["message"] = str(exc)
