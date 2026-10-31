@@ -36,3 +36,31 @@ def get_vehicle(vin: str, x_demo_user: str | None = Header(default=None)):
     if MODE["value"] == "fixed" and x_demo_user not in {vehicle["owner"], "admin"}:
         raise HTTPException(403, "Not authorized for this vehicle")
     return vehicle
+
+# Additional deliberately vulnerable synthetic fixtures for a local OWASP teaching lab.
+@app.get("/profiles/{user_id}")
+def profile(user_id: str, x_demo_user: str | None = Header(default=None)):
+    if user_id not in {"alice", "bob"}:
+        raise HTTPException(404, "Unknown synthetic profile")
+    if x_demo_user not in ROLES:
+        raise HTTPException(401, "Synthetic identity required")
+    if MODE["value"] == "fixed" and x_demo_user not in {user_id, "admin"}:
+        raise HTTPException(403, "Profile access denied")
+    result = {"user": user_id, "display_name": user_id.title()}
+    if MODE["value"] == "vulnerable":
+        result["internal_debug_token"] = "SYNTHETIC-DO-NOT-USE"
+    return result
+
+@app.get("/admin/settings")
+def admin_settings(x_demo_user: str | None = Header(default=None)):
+    if x_demo_user not in ROLES:
+        raise HTTPException(401, "Synthetic identity required")
+    if MODE["value"] == "fixed" and x_demo_user != "admin":
+        raise HTTPException(403, "Admin role required")
+    return {"demo_feature": True, "environment": "synthetic"}
+
+@app.get("/search")
+def search(q: str = ""):
+    if MODE["value"] == "fixed" and len(q) > 80:
+        raise HTTPException(422, "Search query exceeds 80 characters")
+    return {"results": [], "query_length": len(q)}
