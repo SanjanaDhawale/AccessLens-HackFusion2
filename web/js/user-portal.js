@@ -46,3 +46,5 @@ $("openapi-parse")?.addEventListener("click",async()=>{
   add("assistant","Parsed "+data.endpoint_count+" OpenAPI operations from "+data.title+". View the endpoint inventory in the OpenAPI analyzer panel. This did not scan any API.");
  }catch(err){out.textContent="OpenAPI parsing failed: "+err.message}finally{btn.disabled=false}
 });
+
+if(initialParams.get('tool')==='openapi'){showOpenApiPanel();}
