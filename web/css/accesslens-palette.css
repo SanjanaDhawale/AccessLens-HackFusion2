@@ -1,0 +1,24 @@
+/* AccessLens shared cyberpunk palette — consistent across all frontend screens. */
+:root{--bg:#0A111B;--side:#111F2C;--card:#152635;--panel:#102D39;--cyan:#00E5F2;--lime:#B5FF42;--purple:#A43BF0;--pink:#FF4F85;--amber:#FFB65C;--success:#72FF9B;--text:#F4F8FF;--muted:#92B4CA;--line:#2C4859;color-scheme:dark}
+html,body{background:var(--bg);color:var(--text)}
+body{background-color:var(--bg)}
+.sidebar,.rail{background-color:var(--side);border-color:var(--line)}
+.workspace,.main,.content,.main-content{background-color:var(--bg)}
+.topbar,.cyber-top,.top,.header{border-color:var(--line)}
+.brand span,.logo .lime,.lime,.eyebrow,.label,.section-label,.rail-label,.micro{color:var(--cyan)}
+.nav.selected,.nav.active,.nav-link.selected,.nav-link.active,.rail .active{color:var(--cyan)}
+.new,.new-chat{background:linear-gradient(110deg,var(--purple),var(--pink));color:var(--text);border-color:var(--purple)}
+.new:hover,.new-chat:hover{filter:brightness(1.12)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+a:hover{color:var(--cyan)}
+.stat,.panel,.live-panel,.message.assistant,.composer,.chat-panel{border-color:var(--line)}
+.live-panel{background:var(--card)}
+.live-link,.live-metrics strong,.live-table th{color:var(--cyan)}
+.live-btn{background:var(--lime);color:var(--bg)}
+.live-btn:hover{filter:brightness(1.08)}
+.live-status{border-color:var(--line)}
+.live-muted{color:var(--muted)}
+.live-warning{color:var(--amber)}
+.live-empty{color:var(--muted)}
+.preview-banner{background:var(--panel);color:var(--lime);border-color:var(--line)}
+::selection{background:#00E5F255;color:var(--text)}
