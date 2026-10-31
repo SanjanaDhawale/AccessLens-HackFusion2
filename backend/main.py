@@ -5,7 +5,7 @@ from threading import Lock
 from uuid import uuid4
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
@@ -44,6 +44,72 @@ def check_target(url):
             raise ScopeViolation("Only registered loopback API base URLs on approved development ports are allowed")
     except (ScopeViolation, ValueError) as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/v1/openapi/parse")
+async def parse_openapi(request: Request):
+    """Parse a supplied OpenAPI JSON document without fetching remote URLs or running scans."""
+    if request.headers.get("content-length") and int(request.headers["content-length"]) > 1_048_576:
+        raise HTTPException(413, "OpenAPI document must be 1 MB or smaller")
+    raw = await request.body()
+    if len(raw) > 1_048_576:
+        raise HTTPException(413, "OpenAPI document must be 1 MB or smaller")
+    import json
+    try:
+        spec = json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(400, "Upload a valid OpenAPI JSON document")
+    if not isinstance(spec, dict) or not isinstance(spec.get("openapi"), str) or not spec["openapi"].startswith("3."):
+        raise HTTPException(400, "OpenAPI 3.x JSON is required")
+    paths = spec.get("paths")
+    if not isinstance(paths, dict) or len(paths) > 200:
+        raise HTTPException(400, "Expected a paths object with at most 200 entries")
+    security_schemes = spec.get("components", {}).get("securitySchemes", {}) if isinstance(spec.get("components"), dict) else {}
+    if not isinstance(security_schemes, dict):
+        security_schemes = {}
+    methods = {"get", "post", "put", "patch", "delete", "head", "options", "trace"}
+    endpoints = []
+    for path, item in paths.items():
+        if not isinstance(path, str) or not path.startswith("/") or len(path) > 300 or not isinstance(item, dict):
+            continue
+        for method, op in item.items():
+            if method.lower() not in methods or not isinstance(op, dict):
+                continue
+            if len(endpoints) >= 500:
+                raise HTTPException(400, "Too many operations (maximum 500)")
+            inherited = spec.get("security", [])
+            security = op.get("security", inherited)
+            if not isinstance(security, list):
+                security = []
+            requirements = []
+            for req in security:
+                if not isinstance(req, dict):
+                    continue
+                for scheme, scopes in req.items():
+                    if not isinstance(scheme, str):
+                        continue
+                    scheme_def = security_schemes.get(scheme, {})
+                    requirements.append({"scheme": scheme,
+                                         "type": scheme_def.get("type", "unspecified") if isinstance(scheme_def, dict) else "unspecified",
+                                         "scopes": scopes if isinstance(scopes, list) else []})
+            roles = op.get("x-roles", op.get("x-required-roles", []))
+            if not isinstance(roles, list):
+                roles = []
+            endpoints.append({
+                "method": method.upper(), "path": path,
+                "summary": str(op.get("summary", ""))[:250],
+                "operation_id": str(op.get("operationId", ""))[:150],
+                "authentication": "declared" if security else ("public_or_unspecified" if not inherited else "none"),
+                "security_requirements": requirements,
+                "expected_roles": [str(role)[:80] for role in roles[:20]],
+                "roles_source": "vendor_extension" if roles else "not_specified",
+                "tested": False
+            })
+    info = spec.get("info", {})
+    title = info.get("title", "Untitled API") if isinstance(info, dict) else "Untitled API"
+    return {"title": str(title)[:200], "openapi_version": spec["openapi"],
+            "endpoint_count": len(endpoints), "endpoints": endpoints,
+            "notice": "Specification inventory only. No HTTP requests or security scans were performed. OpenAPI security schemes describe authentication, not ownership or role authorization; roles are shown only when explicitly declared using x-roles or x-required-roles."}
 
 @app.get("/api/v1/demo/endpoints")
 def demo_endpoints():
