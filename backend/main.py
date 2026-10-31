@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from engine.scope import ScopeViolation, validate_target_url
-from engine.demo_scanner import scan_demo, scan_lab
+from engine.demo_scanner import scan_demo, scan_lab, scan_registered_local
 
 app = FastAPI(title="AccessLens API", version="1.0.0")
 app.add_middleware(CORSMiddleware,
@@ -19,6 +19,8 @@ app.add_middleware(CORSMiddleware,
 _jobs: dict[str, dict] = {}
 _lock = Lock()
 DEMO_HOSTS = {"127.0.0.1", "localhost"}
+ALLOWED_LOCAL_PORTS = {8001, 8002, 8003, 8004, 8005, 8080, 8081, 3000, 3001, 5000, 5001, 9000}
+# Keep the backend (8000) and frontend (5500) outside the test target allowlist.
 
 class ScanRequest(BaseModel):
     target_url: str = Field(min_length=10, max_length=2048)
@@ -38,8 +40,8 @@ def check_target(url):
     try:
         validate_target_url(url, DEMO_HOSTS)
         parsed = urlsplit(url)
-        if parsed.port != 8001 or parsed.username or parsed.password or parsed.fragment:
-            raise ScopeViolation("Only the local ConnectedCar demo at port 8001 is allowed")
+        if parsed.scheme != "http" or parsed.port not in ALLOWED_LOCAL_PORTS or parsed.username or parsed.password or parsed.fragment or parsed.query or parsed.path not in {"", "/"}:
+            raise ScopeViolation("Only registered loopback API base URLs on approved development ports are allowed")
     except (ScopeViolation, ValueError) as exc:
         raise HTTPException(400, str(exc)) from exc
 
@@ -84,7 +86,9 @@ async def create_scan(request: ScanRequest):
         raise HTTPException(403, "Explicit authorization required")
     check_target(request.target_url)
     if request.openapi_url:
-        raise HTTPException(400, "Remote OpenAPI URLs are not supported; use the local /openapi.json inventory")
+        raise HTTPException(400, "Remote OpenAPI URLs are not supported")
+    if any(".." in p or "\\\\" in p or "%2f" in p.lower() or "%2e" in p.lower() for p in request.approved_scope):
+        raise HTTPException(400, "Unsafe approved scope path")
     if request.mode not in {"vulnerable", "fixed"}:
         raise HTTPException(400, "Unsupported mode")
     job = {"id": str(uuid4()), "target_url": request.target_url,
@@ -94,7 +98,9 @@ async def create_scan(request: ScanRequest):
     with _lock:
         _jobs[job["id"]] = job
     try:
-        findings = await scan_lab(request.target_url, request.approved_scope)
+        is_demo = urlsplit(request.target_url).port == 8001
+        findings = await (scan_lab(request.target_url, request.approved_scope) if is_demo else scan_registered_local(request.target_url, request.approved_scope))
+        job["scan_kind"] = "synthetic_vulnerability" if is_demo else "endpoint_connectivity"
         job["findings"] = findings
         job["status"] = "completed"
         job["message"] = "Scoped synthetic API checks completed"
@@ -117,13 +123,13 @@ def report(scan_id: str):
     if job["status"] != "completed":
         raise HTTPException(409, "Report requires completed check")
     return {"scan_id": scan_id, "demo_only": True, "target_url": job["target_url"],
-            "application": "ConnectedCar Synthetic Demo",
-            "methodology": "Owner vs non-owner HTTP GET comparison",
-            "owasp_2023_tested": ["API1:2023 Broken Object Level Authorization"],
+            "application": "ConnectedCar Synthetic Demo" if job.get("scan_kind") == "synthetic_vulnerability" else "Authorized Local API",
+            "methodology": "Bounded synthetic HTTP security checks" if job.get("scan_kind") == "synthetic_vulnerability" else "Non-invasive approved endpoint GET availability checks",
+            "owasp_2023_tested": ["API1:2023", "API3:2023", "API5:2023"] if job.get("scan_kind") == "synthetic_vulnerability" else [],
             "scope": job["approved_scope"], "created_at": job["created_at"],
             "recommendations": ["Enforce server-side object ownership checks on every request.", "Return 403 for cross-owner requests.", "Retest with the fixed synthetic target."],
             "status": job["status"], "findings": job["findings"],
-            "disclaimer": "Synthetic local ConnectedCar test only. Not a production VAPT report."}
+            "disclaimer": "Local authorized development test only. Non-demo targets receive connectivity checks, not vulnerability testing. Not a production VAPT report."}
 
 @app.get("/api/v1/scans/{scan_id}/report/html", response_class=HTMLResponse)
 def readable_report(scan_id: str):
@@ -172,5 +178,5 @@ button{{background:#103a56;color:white;border:0;padding:11px 18px;border-radius:
 <div class="metric"><strong>{failures}</strong>Failed</div>
 <div class="metric"><strong>{len(findings)-failures}</strong>Other verdicts</div></div>
 <h2>Findings, evidence and recommendations</h2>{content}
-<div class="notice"><b>Scope limitation:</b> This report describes bounded HTTP checks against the intentionally vulnerable local ConnectedCar synthetic application. It is not a production penetration test or a certified VAPT report.</div>
+<div class="notice"><b>Scope limitation:</b> This report describes bounded local HTTP checks. Non-ConnectedCar targets are tested only for endpoint availability, not vulnerabilities. It is not a production penetration test or a certified VAPT report.</div>
 </main></body></html>""")
