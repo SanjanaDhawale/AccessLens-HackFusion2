@@ -81,3 +81,40 @@ async def scan_lab(target_url: str, approved_scope: list[str]) -> list[dict]:
     if not findings:
         raise ValueError("Approved scope does not include a supported synthetic lab endpoint")
     return findings
+
+
+async def scan_registered_local(target_url: str, approved_scope: list[str]) -> list[dict]:
+    """Non-invasive availability checks for separately registered loopback API targets.
+
+    Only exact paths supplied by the owner are requested. No fuzzing, auth bypass,
+    automatic crawling, redirect following, or vulnerability claims.
+    """
+    from urllib.parse import urlsplit
+    from engine.scope import ScopeViolation
+    parsed = urlsplit(target_url)
+    base = f"{parsed.scheme}://{parsed.netloc}"
+    paths = list(dict.fromkeys(approved_scope))
+    if len(paths) > 20:
+        raise ScopeViolation("At most 20 approved paths per scan")
+    findings = []
+    async with httpx.AsyncClient(timeout=4, follow_redirects=False, trust_env=False) as client:
+        for index, path in enumerate(paths, 1):
+            if not path.startswith("/") or path.startswith("//") or any(x in path for x in ("?", "#", "\\", "..")):
+                raise ScopeViolation("Invalid approved path")
+            # Path is supplied explicitly by the owner; do not discover or traverse.
+            try:
+                response = await client.get(base + path, headers={"Accept": "application/json"})
+                status = response.status_code
+                evidence = {"http_status": status, "redirect_followed": False}
+                verdict = "REACHABLE" if status < 400 else "HTTP_ERROR"
+                detail = f"GET {path} returned HTTP {status}. This is an availability check, not a security finding."
+            except httpx.RequestError:
+                evidence = {"connection": "failed"}
+                verdict = "UNAVAILABLE"
+                detail = f"GET {path} could not be reached."
+            findings.append({"id": f"CHECK-{index:03}", "owasp_category": "Connectivity check",
+                "type": "Approved endpoint availability", "endpoint": path, "method": "GET",
+                "severity": "INFO", "verdict": verdict, "confidence": "OBSERVED",
+                "description": detail, "evidence": evidence,
+                "recommendation": "For vulnerability testing, configure an isolated synthetic target with dedicated test roles."})
+    return findings
